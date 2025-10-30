@@ -1,11 +1,14 @@
 import { Book } from '@/lib/types';
+import { ShoppingCart } from '@phosphor-icons/react';
+import { Button } from '@/components/ui/button';
 
 interface BookCardProps {
   book: Book;
   onClick: () => void;
+  onAddToCart: (e: React.MouseEvent) => void;
 }
 
-export function BookCard({ book, onClick }: BookCardProps) {
+export function BookCard({ book, onClick, onAddToCart }: BookCardProps) {
   const statusConfig = {
     available: { label: '販売中', className: 'bg-secondary text-secondary-foreground' },
     'coming-soon': { label: '予約受付中', className: 'bg-accent/20 text-accent-foreground' },
@@ -56,7 +59,19 @@ export function BookCard({ book, onClick }: BookCardProps) {
             </span>
           ))}
         </div>
-        <p className="text-lg font-semibold text-primary">¥{book.price.toLocaleString()}</p>
+        <div className="flex items-center justify-between">
+          <p className="text-lg font-semibold text-primary">¥{book.price.toLocaleString()}</p>
+          {book.status === 'available' && (
+            <Button
+              size="sm"
+              onClick={onAddToCart}
+              className="gap-2"
+            >
+              <ShoppingCart size={16} />
+              カートへ
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

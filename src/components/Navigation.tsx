@@ -1,11 +1,20 @@
-import { Book, GearSix } from '@phosphor-icons/react';
+import { Book, GearSix, ShoppingCart } from '@phosphor-icons/react';
+import { useKV } from '@github/spark/hooks';
+import { CartItem } from '@/lib/types';
+import { useMemo } from 'react';
 
 interface NavigationProps {
-  currentPage: 'catalog' | 'detail' | 'about' | 'admin';
-  onNavigate: (page: 'catalog' | 'about' | 'admin') => void;
+  currentPage: 'catalog' | 'detail' | 'about' | 'admin' | 'cart' | 'checkout' | 'order-completed';
+  onNavigate: (page: 'catalog' | 'about' | 'admin' | 'cart') => void;
 }
 
 export function Navigation({ currentPage, onNavigate }: NavigationProps) {
+  const [cart] = useKV<CartItem[]>('shopping-cart', []);
+
+  const cartItemCount = useMemo(() => {
+    if (!cart) return 0;
+    return cart.reduce((sum, item) => sum + item.quantity, 0);
+  }, [cart]);
   return (
     <nav className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border">
       <div className="max-w-7xl mx-auto px-6 py-4">
@@ -45,6 +54,22 @@ export function Navigation({ currentPage, onNavigate }: NavigationProps) {
               }`}
             >
               About
+            </button>
+            <button
+              onClick={() => onNavigate('cart')}
+              className={`px-5 py-2 rounded-full font-medium transition-all flex items-center gap-2 relative ${
+                currentPage === 'cart' || currentPage === 'checkout' || currentPage === 'order-completed'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              }`}
+            >
+              <ShoppingCart size={18} weight={currentPage === 'cart' ? 'fill' : 'regular'} />
+              カート
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {cartItemCount > 99 ? '99+' : cartItemCount}
+                </span>
+              )}
             </button>
             <button
               onClick={() => onNavigate('admin')}

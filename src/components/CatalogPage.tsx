@@ -3,8 +3,9 @@ import { useKV } from '@github/spark/hooks';
 import { BookCard } from './BookCard';
 import { FilterBar } from './FilterBar';
 import { EmptyState } from './EmptyState';
-import { Book, SalesStatus } from '@/lib/types';
+import { Book, SalesStatus, CartItem } from '@/lib/types';
 import { booksData } from '@/lib/data';
+import { toast } from 'sonner';
 
 interface CatalogPageProps {
   onBookSelect: (bookId: string) => void;
@@ -14,6 +15,7 @@ export function CatalogPage({ onBookSelect }: CatalogPageProps) {
   const [selectedStatus, setSelectedStatus] = useState<SalesStatus | 'all'>('all');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [customBooks, setCustomBooks] = useKV<Book[]>('books-data', []);
+  const [cart, setCart] = useKV<CartItem[]>('shopping-cart', []);
 
   useEffect(() => {
     if (!customBooks || customBooks.length === 0) {
@@ -62,6 +64,26 @@ export function CatalogPage({ onBookSelect }: CatalogPageProps) {
     setSelectedTags([]);
   };
 
+  const handleAddToCart = (bookId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    setCart((currentCart) => {
+      if (!currentCart) return [{ bookId, quantity: 1 }];
+      
+      const existingItem = currentCart.find(item => item.bookId === bookId);
+      if (existingItem) {
+        return currentCart.map(item =>
+          item.bookId === bookId
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+      return [...currentCart, { bookId, quantity: 1 }];
+    });
+    
+    toast.success('カートに追加しました');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -97,6 +119,7 @@ export function CatalogPage({ onBookSelect }: CatalogPageProps) {
                 key={book.id}
                 book={book}
                 onClick={() => onBookSelect(book.id)}
+                onAddToCart={(e) => handleAddToCart(book.id, e)}
               />
             ))}
           </div>

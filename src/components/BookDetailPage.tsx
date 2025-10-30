@@ -1,12 +1,12 @@
-import { ArrowLeft } from '@phosphor-icons/react';
+import { ArrowLeft, ShoppingCart, Plus, Minus } from '@phosphor-icons/react';
 import { useKV } from '@github/spark/hooks';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Book } from '@/lib/types';
+import { Book, CartItem } from '@/lib/types';
 import { booksData } from '@/lib/data';
 import { toast } from 'sonner';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 interface BookDetailPageProps {
   bookId: string;
@@ -15,11 +15,32 @@ interface BookDetailPageProps {
 
 export function BookDetailPage({ bookId, onBack }: BookDetailPageProps) {
   const [customBooks] = useKV<Book[]>('books-data', []);
+  const [cart, setCart] = useKV<CartItem[]>('shopping-cart', []);
+  const [quantity, setQuantity] = useState(1);
 
   const book = useMemo(() => {
     const allBooks = customBooks && customBooks.length > 0 ? customBooks : booksData;
     return allBooks.find(b => b.id === bookId);
   }, [bookId, customBooks]);
+
+  const handleAddToCart = () => {
+    setCart((currentCart) => {
+      if (!currentCart) return [{ bookId, quantity }];
+      
+      const existingItem = currentCart.find(item => item.bookId === bookId);
+      if (existingItem) {
+        return currentCart.map(item =>
+          item.bookId === bookId
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
+        );
+      }
+      return [...currentCart, { bookId, quantity }];
+    });
+    
+    toast.success(`${quantity}冊をカートに追加しました`);
+    setQuantity(1);
+  };
 
   if (!book) {
     toast.error('本が見つかりませんでした');
@@ -114,10 +135,40 @@ export function BookDetailPage({ bookId, onBack }: BookDetailPageProps) {
             </div>
 
             {book.status === 'available' && (
-              <div className="mt-8 p-6 bg-accent/10 rounded-lg border border-accent/20">
-                <p className="text-sm text-foreground/80">
-                  この本は現在販売中です。詳細は店舗までお問い合わせください。
-                </p>
+              <div className="mt-8 space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 border rounded-lg">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      disabled={quantity <= 1}
+                    >
+                      <Minus size={20} />
+                    </Button>
+                    <span className="w-12 text-center font-medium text-lg">{quantity}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setQuantity(quantity + 1)}
+                    >
+                      <Plus size={20} />
+                    </Button>
+                  </div>
+                  <Button
+                    onClick={handleAddToCart}
+                    size="lg"
+                    className="flex-grow gap-2"
+                  >
+                    <ShoppingCart size={20} />
+                    カートに追加
+                  </Button>
+                </div>
+                <div className="p-6 bg-accent/10 rounded-lg border border-accent/20">
+                  <p className="text-sm text-foreground/80">
+                    この本は現在販売中です。お届けまで3〜5営業日程度かかります。
+                  </p>
+                </div>
               </div>
             )}
 

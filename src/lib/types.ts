@@ -12,3 +12,19 @@ export interface Book {
   author: string;
   publicationYear: number;
 }
+
+export interface CartItem {
+  bookId: string;
+  quantity: number;
+}
+
+export interface Order {
+  id: string;
+  items: CartItem[];
+  totalAmount: number;
+  customerName: string;
+  email: string;
+  address: string;
+  cardLast4: string;
+  createdAt: string;
+}
