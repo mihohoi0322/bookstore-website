@@ -1,8 +1,8 @@
-import { Book } from '@phosphor-icons/react';
+import { Book, GearSix } from '@phosphor-icons/react';
 
 interface NavigationProps {
-  currentPage: 'catalog' | 'detail' | 'about';
-  onNavigate: (page: 'catalog' | 'about') => void;
+  currentPage: 'catalog' | 'detail' | 'about' | 'admin';
+  onNavigate: (page: 'catalog' | 'about' | 'admin') => void;
 }
 
 export function Navigation({ currentPage, onNavigate }: NavigationProps) {
@@ -45,6 +45,17 @@ export function Navigation({ currentPage, onNavigate }: NavigationProps) {
               }`}
             >
               About
+            </button>
+            <button
+              onClick={() => onNavigate('admin')}
+              className={`px-5 py-2 rounded-full font-medium transition-all flex items-center gap-2 ${
+                currentPage === 'admin'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              }`}
+            >
+              <GearSix size={18} weight={currentPage === 'admin' ? 'fill' : 'regular'} />
+              管理
             </button>
           </div>
         </div>

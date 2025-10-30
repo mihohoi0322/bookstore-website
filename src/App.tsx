@@ -4,8 +4,9 @@ import { Navigation } from '@/components/Navigation';
 import { CatalogPage } from '@/components/CatalogPage';
 import { BookDetailPage } from '@/components/BookDetailPage';
 import { AboutPage } from '@/components/AboutPage';
+import { AdminPage } from '@/components/AdminPage';
 
-type Page = 'catalog' | 'detail' | 'about';
+type Page = 'catalog' | 'detail' | 'about' | 'admin';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('catalog');
@@ -15,7 +16,7 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentPage, selectedBookId]);
 
-  const handleNavigate = (page: 'catalog' | 'about') => {
+  const handleNavigate = (page: 'catalog' | 'about' | 'admin') => {
     setCurrentPage(page);
     setSelectedBookId(null);
   };
@@ -28,6 +29,10 @@ function App() {
   const handleBack = () => {
     setCurrentPage('catalog');
     setSelectedBookId(null);
+  };
+
+  const handleBackFromAdmin = () => {
+    setCurrentPage('catalog');
   };
 
   return (
@@ -43,6 +48,8 @@ function App() {
       )}
       
       {currentPage === 'about' && <AboutPage />}
+      
+      {currentPage === 'admin' && <AdminPage onBack={handleBackFromAdmin} />}
       
       <Toaster />
     </div>

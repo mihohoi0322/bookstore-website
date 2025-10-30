@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useKV } from '@github/spark/hooks';
 import { BookCard } from './BookCard';
 import { FilterBar } from './FilterBar';
 import { EmptyState } from './EmptyState';
 import { Book, SalesStatus } from '@/lib/types';
-import { getAllBooks, getAllTags } from '@/lib/data';
+import { booksData } from '@/lib/data';
 
 interface CatalogPageProps {
   onBookSelect: (bookId: string) => void;
@@ -12,9 +13,28 @@ interface CatalogPageProps {
 export function CatalogPage({ onBookSelect }: CatalogPageProps) {
   const [selectedStatus, setSelectedStatus] = useState<SalesStatus | 'all'>('all');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [customBooks, setCustomBooks] = useKV<Book[]>('books-data', []);
 
-  const allBooks = getAllBooks();
-  const availableTags = getAllTags();
+  useEffect(() => {
+    if (!customBooks || customBooks.length === 0) {
+      setCustomBooks(booksData);
+    }
+  }, []);
+
+  const allBooks = useMemo(() => {
+    if (customBooks && customBooks.length > 0) {
+      return customBooks;
+    }
+    return booksData;
+  }, [customBooks]);
+
+  const availableTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    allBooks.forEach(book => {
+      book.tags.forEach(tag => tagSet.add(tag));
+    });
+    return Array.from(tagSet).sort();
+  }, [allBooks]);
 
   const filteredBooks = useMemo(() => {
     return allBooks.filter((book) => {

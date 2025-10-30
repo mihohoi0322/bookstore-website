@@ -8,9 +8,16 @@ A warm and stylish personal bookstore website that showcases curated books with 
 3. **Approachable & Friendly** - Easy to navigate with clear information hierarchy that welcomes all visitors
 
 **Complexity Level**: Light Application (multiple features with basic state)
-  - Multiple pages with navigation, filtering capabilities, and state management for browsing books
+  - Multiple pages with navigation, filtering capabilities, state management for browsing books, and an admin interface for managing book inventory
 
 ## Essential Features
+
+### Admin Management Interface
+- **Functionality**: Allow site owners to add, edit, and delete books in the catalog with a dedicated admin interface
+- **Purpose**: Enable dynamic content management without code changes
+- **Trigger**: Clicking "管理" (Admin) button in navigation
+- **Progression**: Click admin nav → View book list → Click "新規登録" for new book OR edit/delete existing book → Fill form with book details → Save changes → Return to admin list or catalog
+- **Success criteria**: Books persist between sessions, form validation works, changes reflect immediately in catalog, delete confirmation prevents accidental removal
 
 ### Book Catalog Display
 - **Functionality**: Display all available books in a grid of cards showing cover, title, status, and tags

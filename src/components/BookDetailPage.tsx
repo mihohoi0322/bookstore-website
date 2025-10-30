@@ -1,10 +1,12 @@
 import { ArrowLeft } from '@phosphor-icons/react';
+import { useKV } from '@github/spark/hooks';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Book } from '@/lib/types';
-import { getBookById } from '@/lib/data';
+import { booksData } from '@/lib/data';
 import { toast } from 'sonner';
+import { useMemo } from 'react';
 
 interface BookDetailPageProps {
   bookId: string;
@@ -12,7 +14,12 @@ interface BookDetailPageProps {
 }
 
 export function BookDetailPage({ bookId, onBack }: BookDetailPageProps) {
-  const book = getBookById(bookId);
+  const [customBooks] = useKV<Book[]>('books-data', []);
+
+  const book = useMemo(() => {
+    const allBooks = customBooks && customBooks.length > 0 ? customBooks : booksData;
+    return allBooks.find(b => b.id === bookId);
+  }, [bookId, customBooks]);
 
   if (!book) {
     toast.error('本が見つかりませんでした');
