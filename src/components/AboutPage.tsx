@@ -1,4 +1,5 @@
 import { Separator } from '@/components/ui/separator';
+import teamLogo from '@/assets/images/teamlogo.png';
 
 export function AboutPage() {
   const history = [
@@ -34,6 +35,13 @@ export function AboutPage() {
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-6 py-12">
         <div className="mb-16 text-center">
+          <div className="flex justify-center mb-8">
+            <img 
+              src={teamLogo} 
+              alt="Demo-Create" 
+              className="h-24 w-auto object-contain"
+            />
+          </div>
           <h2 className="text-4xl font-semibold mb-4">About Us</h2>
           <p className="text-xl text-muted-foreground">
             私たちDemo-Createについて
