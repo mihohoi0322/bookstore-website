@@ -19,9 +19,9 @@ export function AdminPage({ onBack }: AdminPageProps) {
 
   useEffect(() => {
     if (!books || books.length === 0) {
-      setBooks(booksData);
+      setBooks(() => booksData);
     }
-  }, []);
+  }, [books, setBooks]);
 
   const handleAddBook = () => {
     setEditingBook(null);
