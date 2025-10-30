@@ -2,7 +2,7 @@ import { Book } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { PencilSimple, Trash } from '@phosphor-icons/react';
+import { Pencil, Trash } from '@phosphor-icons/react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -78,7 +78,7 @@ export function BookListAdmin({ books, onEdit, onDelete }: BookListAdminProps) {
                     onClick={() => onEdit(book)}
                     className="h-9 w-9"
                   >
-                    <PencilSimple size={16} />
+                    <Pencil size={18} />
                   </Button>
                   
                   <AlertDialog>
@@ -88,7 +88,7 @@ export function BookListAdmin({ books, onEdit, onDelete }: BookListAdminProps) {
                         size="icon"
                         className="h-9 w-9 text-destructive hover:text-destructive"
                       >
-                        <Trash size={16} />
+                        <Trash size={18} />
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>

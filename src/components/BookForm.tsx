@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
-import { X } from '@phosphor-icons/react';
+import { X, Image as ImageIcon, Upload } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
 
 interface BookFormProps {
@@ -198,21 +198,65 @@ export function BookForm({ book, onSave, onCancel }: BookFormProps) {
 
         <div className="space-y-2">
           <Label htmlFor="image">書籍画像</Label>
-          <Input
-            id="image"
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-          />
-          {formData.image && (
-            <div className="mt-4">
-              <img
-                src={formData.image}
-                alt="プレビュー"
-                className="w-32 h-48 object-cover rounded-lg border"
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <Input
+                id="image"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
               />
+              <Label
+                htmlFor="image"
+                className="flex items-center gap-2 px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md cursor-pointer transition-colors"
+              >
+                <Upload size={18} />
+                <span className="text-sm font-medium">
+                  {formData.image ? '画像を変更' : '画像をアップロード'}
+                </span>
+              </Label>
+              {formData.image && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFormData({ ...formData, image: undefined })}
+                  className="gap-2"
+                >
+                  <X size={16} />
+                  削除
+                </Button>
+              )}
             </div>
-          )}
+            {formData.image ? (
+              <div className="flex items-start gap-4 p-4 border rounded-lg bg-muted/30">
+                <img
+                  src={formData.image}
+                  alt="プレビュー"
+                  className="w-24 h-36 object-cover rounded-lg border"
+                />
+                <div className="flex-1">
+                  <p className="text-sm font-medium mb-1">画像プレビュー</p>
+                  <p className="text-xs text-muted-foreground">
+                    この画像が書籍カバーとして表示されます
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 p-4 border border-dashed rounded-lg bg-muted/10">
+                <ImageIcon size={32} className="text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    画像がアップロードされていません
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    JPG、PNG形式の画像ファイルをアップロードしてください
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2">
