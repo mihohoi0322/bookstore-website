@@ -57,6 +57,11 @@ export function AdminPage({ onBack }: AdminPageProps) {
     setEditingBook(null);
   };
 
+  const handleResetToDefault = () => {
+    setBooks(() => booksData);
+    toast.success('デフォルトデータにリセットしました');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
@@ -78,10 +83,15 @@ export function AdminPage({ onBack }: AdminPageProps) {
             </div>
           </div>
           {!isFormOpen && (
-            <Button onClick={handleAddBook} className="gap-2 w-full sm:w-auto">
-              <Plus size={20} weight="bold" />
-              新規登録
-            </Button>
+            <div className="flex gap-2 w-full sm:w-auto flex-col sm:flex-row">
+              <Button onClick={handleAddBook} className="gap-2">
+                <Plus size={20} weight="bold" />
+                新規登録
+              </Button>
+              <Button onClick={handleResetToDefault} variant="outline" className="gap-2">
+                デフォルトに戻す
+              </Button>
+            </div>
           )}
         </div>
 

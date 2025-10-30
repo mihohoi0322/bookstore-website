@@ -17,9 +17,14 @@ export function CatalogPage({ onBookSelect }: CatalogPageProps) {
 
   useEffect(() => {
     if (!customBooks || customBooks.length === 0) {
-      setCustomBooks(booksData);
+      setCustomBooks((current) => {
+        if (!current || current.length === 0) {
+          return booksData;
+        }
+        return current;
+      });
     }
-  }, []);
+  }, [customBooks, setCustomBooks]);
 
   const allBooks = useMemo(() => {
     if (customBooks && customBooks.length > 0) {
