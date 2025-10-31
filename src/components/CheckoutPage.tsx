@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useKV } from '@github/spark/hooks';
+import { usePersistentState } from '@/hooks/usePersistentState';
 import { ArrowLeft, CreditCard, Lock } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -16,9 +16,9 @@ interface CheckoutPageProps {
 }
 
 export function CheckoutPage({ onBack, onComplete }: CheckoutPageProps) {
-  const [cart] = useKV<CartItem[]>('shopping-cart', []);
-  const [customBooks] = useKV<Book[]>('books-data', []);
-  const [, setOrders] = useKV<Order[]>('orders', []);
+  const [cart] = usePersistentState<CartItem[]>('shopping-cart', []);
+  const [customBooks] = usePersistentState<Book[]>('books-data', []);
+  const [, setOrders] = usePersistentState<Order[]>('orders', []);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const [formData, setFormData] = useState({

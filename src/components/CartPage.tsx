@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useKV } from '@github/spark/hooks';
+import { usePersistentState } from '@/hooks/usePersistentState';
 import { ArrowLeft, Trash, Plus, Minus, ShoppingCart } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -14,8 +14,8 @@ interface CartPageProps {
 }
 
 export function CartPage({ onBack, onCheckout }: CartPageProps) {
-  const [cart, setCart] = useKV<CartItem[]>('shopping-cart', []);
-  const [customBooks] = useKV<Book[]>('books-data', []);
+  const [cart, setCart] = usePersistentState<CartItem[]>('shopping-cart', []);
+  const [customBooks] = usePersistentState<Book[]>('books-data', []);
 
   const allBooks = useMemo(() => {
     return customBooks && customBooks.length > 0 ? customBooks : booksData;

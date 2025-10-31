@@ -1,12 +1,12 @@
+import { useMemo, useState } from 'react';
 import { ArrowLeft, ShoppingCart, Plus, Minus } from '@phosphor-icons/react';
-import { useKV } from '@github/spark/hooks';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { usePersistentState } from '@/hooks/usePersistentState';
 import { Book, CartItem } from '@/lib/types';
 import { booksData } from '@/lib/data';
-import { toast } from 'sonner';
-import { useMemo, useState } from 'react';
 
 interface BookDetailPageProps {
   bookId: string;
@@ -14,8 +14,8 @@ interface BookDetailPageProps {
 }
 
 export function BookDetailPage({ bookId, onBack }: BookDetailPageProps) {
-  const [customBooks] = useKV<Book[]>('books-data', []);
-  const [cart, setCart] = useKV<CartItem[]>('shopping-cart', []);
+  const [customBooks] = usePersistentState<Book[]>('books-data', []);
+  const [cart, setCart] = usePersistentState<CartItem[]>('shopping-cart', []);
   const [quantity, setQuantity] = useState(1);
 
   const book = useMemo(() => {

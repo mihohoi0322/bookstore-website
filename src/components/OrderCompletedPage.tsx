@@ -1,5 +1,5 @@
 import { useMemo, useEffect } from 'react';
-import { useKV } from '@github/spark/hooks';
+import { usePersistentState } from '@/hooks/usePersistentState';
 import { CheckCircle, Package, EnvelopeSimple } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -13,9 +13,9 @@ interface OrderCompletedPageProps {
 }
 
 export function OrderCompletedPage({ orderId, onReturnToCatalog }: OrderCompletedPageProps) {
-  const [orders] = useKV<Order[]>('orders', []);
-  const [customBooks] = useKV<Book[]>('books-data', []);
-  const [, setCart] = useKV<any[]>('shopping-cart', []);
+  const [orders] = usePersistentState<Order[]>('orders', []);
+  const [customBooks] = usePersistentState<Book[]>('books-data', []);
+  const [, setCart] = usePersistentState<any[]>('shopping-cart', []);
 
   useEffect(() => {
     setCart(() => []);

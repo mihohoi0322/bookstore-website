@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useKV } from '@github/spark/hooks';
+import { usePersistentState } from '@/hooks/usePersistentState';
 import { Book } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Plus, ArrowLeft } from '@phosphor-icons/react';
@@ -13,7 +13,7 @@ interface AdminPageProps {
 }
 
 export function AdminPage({ onBack }: AdminPageProps) {
-  const [books, setBooks] = useKV<Book[]>('books-data', []);
+  const [books, setBooks] = usePersistentState<Book[]>('books-data', []);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
 

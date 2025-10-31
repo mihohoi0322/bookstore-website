@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useKV } from '@github/spark/hooks';
+import { usePersistentState } from '@/hooks/usePersistentState';
 import { BookCard } from './BookCard';
 import { FilterBar } from './FilterBar';
 import { EmptyState } from './EmptyState';
@@ -14,8 +14,8 @@ interface CatalogPageProps {
 export function CatalogPage({ onBookSelect }: CatalogPageProps) {
   const [selectedStatus, setSelectedStatus] = useState<SalesStatus | 'all'>('all');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [customBooks, setCustomBooks] = useKV<Book[]>('books-data', []);
-  const [cart, setCart] = useKV<CartItem[]>('shopping-cart', []);
+  const [customBooks, setCustomBooks] = usePersistentState<Book[]>('books-data', []);
+  const [cart, setCart] = usePersistentState<CartItem[]>('shopping-cart', []);
 
   useEffect(() => {
     if (!customBooks || customBooks.length === 0) {

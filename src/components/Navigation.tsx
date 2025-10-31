@@ -1,7 +1,7 @@
 import { Book, GearSix, ShoppingCart } from '@phosphor-icons/react';
-import { useKV } from '@github/spark/hooks';
-import { CartItem } from '@/lib/types';
 import { useMemo } from 'react';
+import { usePersistentState } from '@/hooks/usePersistentState';
+import { CartItem } from '@/lib/types';
 
 interface NavigationProps {
   currentPage: 'catalog' | 'detail' | 'about' | 'admin' | 'cart' | 'checkout' | 'order-completed';
@@ -9,7 +9,7 @@ interface NavigationProps {
 }
 
 export function Navigation({ currentPage, onNavigate }: NavigationProps) {
-  const [cart] = useKV<CartItem[]>('shopping-cart', []);
+  const [cart] = usePersistentState<CartItem[]>('shopping-cart', []);
 
   const cartItemCount = useMemo(() => {
     if (!cart) return 0;
