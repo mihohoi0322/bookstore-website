@@ -1,0 +1,16 @@
+.git
+.github
+**/node_modules
+**/dist
+**/build
+**/.turbo
+**/.next
+**/.cache
+**/*.log
+**/.DS_Store
+tests/
+monolith/node_modules
+microservice/.vite
+infra/
+docs/
+**/*.md

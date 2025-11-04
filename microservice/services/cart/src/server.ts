@@ -38,7 +38,7 @@ export async function buildServer() {
 
     if (error instanceof z.ZodError) {
       request.log.warn({ err: error }, 'validation error');
-      return reply.status(400).send({ code: 'BAD_REQUEST', message: 'Invalid payload', details: error.errors });
+      return reply.status(400).send({ code: 'BAD_REQUEST', message: 'Invalid payload', details: error.issues });
     }
 
     request.log.error({ err: error }, 'unexpected error');

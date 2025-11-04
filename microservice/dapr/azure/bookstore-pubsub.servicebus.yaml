@@ -1,0 +1,14 @@
+componentType: pubsub.azure.servicebus.topics
+version: v1
+metadata:
+  - name: namespaceName
+    value: "<SERVICE_BUS_NAMESPACE>.servicebus.windows.net"
+  - name: azureTenantId
+    value: "<AZURE_TENANT_ID>"
+  - name: azureClientId
+    value: "<MANAGED_IDENTITY_CLIENT_ID>"
+scopes:
+  - order-service
+  - catalog-service
+  - cart-service
+  - admin-service
