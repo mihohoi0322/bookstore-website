@@ -5,13 +5,13 @@ WORKDIR /workspace
 
 FROM base AS builder
 
-COPY microservice/services/shared ./shared
+COPY services/shared ./shared
 RUN cd shared \
   && npm ci \
   && npm run build \
   && npm prune --omit=dev
 
-COPY microservice/services/admin ./admin
+COPY services/admin ./admin
 RUN cd admin \
   && npm ci \
   && npm run build \

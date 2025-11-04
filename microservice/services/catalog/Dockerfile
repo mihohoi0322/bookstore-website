@@ -6,14 +6,14 @@ WORKDIR /workspace
 FROM base AS builder
 
 # 共有ライブラリをセットアップ
-COPY microservice/services/shared ./shared
+COPY services/shared ./shared
 RUN cd shared \
   && npm ci \
   && npm run build \
   && npm prune --omit=dev
 
 # カタログサービスをセットアップ
-COPY microservice/services/catalog ./catalog
+COPY services/catalog ./catalog
 RUN cd catalog \
   && npm ci \
   && npm run build \

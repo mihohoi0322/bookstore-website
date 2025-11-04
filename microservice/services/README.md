@@ -66,8 +66,8 @@ export RESOURCE_GROUP="rg-bookstore"
 export LOCATION="japaneast"
 export CONTAINERAPPS_ENVIRONMENT="cae-bookstore"
 export LOG_ANALYTICS_WORKSPACE="law-bookstore"
-export STORAGE_ACCOUNT_NAME="bookstorestate"
-export SERVICE_BUS_NAMESPACE="bookstore-sb"
+export STORAGE_ACCOUNT_NAME="bookstorestate$(date +%s)"  # ストレージアカウント名はグローバルにユニークである必要があります
+export SERVICE_BUS_NAMESPACE="bookstore-bus-$(date +%s)"  # -sb サフィックスは予約済みのため使用不可
 export REGISTRY_SERVER="<REGISTRY_NAME>.azurecr.io"
 export REGISTRY_USERNAME="<ACR_USERNAME>"
 export REGISTRY_PASSWORD="<ACR_PASSWORD>"
@@ -137,21 +137,34 @@ az monitor log-analytics workspace create \
 	--resource-group "$RESOURCE_GROUP" \
 	--workspace-name "$LOG_ANALYTICS_WORKSPACE"
 
+# ホワイトスペースをトリムして変数に格納
 LOG_ANALYTICS_ID=$(az monitor log-analytics workspace show \
 	--resource-group "$RESOURCE_GROUP" \
 	--workspace-name "$LOG_ANALYTICS_WORKSPACE" \
-	--query id --output tsv)
+	--query id --output tsv | xargs)
 
 LOG_ANALYTICS_KEY=$(az monitor log-analytics workspace get-shared-keys \
 	--resource-group "$RESOURCE_GROUP" \
 	--workspace-name "$LOG_ANALYTICS_WORKSPACE" \
-	--query primarySharedKey --output tsv)
+	--query primarySharedKey --output tsv | xargs)
+
+# 変数の値を確認（デバッグ用）
+echo "LOG_ANALYTICS_ID: $LOG_ANALYTICS_ID"
+echo "LOG_ANALYTICS_KEY length: ${#LOG_ANALYTICS_KEY}"
+
+# customerId（ワークスペース ID）を抽出
+LOG_ANALYTICS_CUSTOMER_ID=$(az monitor log-analytics workspace show \
+	--resource-group "$RESOURCE_GROUP" \
+	--workspace-name "$LOG_ANALYTICS_WORKSPACE" \
+	--query customerId --output tsv | xargs)
+
+echo "LOG_ANALYTICS_CUSTOMER_ID: $LOG_ANALYTICS_CUSTOMER_ID"
 
 az containerapp env create \
 	--name "$CONTAINERAPPS_ENVIRONMENT" \
 	--resource-group "$RESOURCE_GROUP" \
 	--location "$LOCATION" \
-	--logs-workspace-id "$LOG_ANALYTICS_ID" \
+	--logs-workspace-id "$LOG_ANALYTICS_CUSTOMER_ID" \
 	--logs-workspace-key "$LOG_ANALYTICS_KEY"
 ```
 
@@ -163,12 +176,21 @@ az storage account create \
 	--resource-group "$RESOURCE_GROUP" \
 	--location "$LOCATION" \
 	--sku Standard_RAGRS \
-	--kind StorageV2
+	--kind StorageV2 \
+	--allow-shared-key-access false
 
+# ストレージキーの取得（後で使用）
+STORAGE_KEY=$(az storage account keys list \
+	--resource-group "$RESOURCE_GROUP" \
+	--account-name "$STORAGE_ACCOUNT_NAME" \
+	--query "[0].value" --output tsv)
+
+# コンテナーの作成（Azure AD 認証を使用）
 for container in catalogstore cartstore orderstore; do
 	az storage container create \
 		--name "$container" \
-		--account-name "$STORAGE_ACCOUNT_NAME"
+		--account-name "$STORAGE_ACCOUNT_NAME" \
+		--auth-mode login
 done
 
 az servicebus namespace create \
@@ -176,40 +198,83 @@ az servicebus namespace create \
 	--resource-group "$RESOURCE_GROUP" \
 	--location "$LOCATION"
 
+# トピック作成時、既に存在する場合はエラーが出ても続行
 az servicebus topic create \
 	--resource-group "$RESOURCE_GROUP" \
 	--namespace-name "$SERVICE_BUS_NAMESPACE" \
-	--name orders
+	--name orders 2>/dev/null || echo "Topic 'orders' already exists or namespace creation pending"
 ```
 
 ### マネージド ID と RBAC の割り当て
 
 ```bash
+# マネージド ID を作成
 az identity create \
 	--resource-group "$RESOURCE_GROUP" \
 	--name "$MANAGED_IDENTITY_NAME"
 
+# マネージド ID の情報を取得
 IDENTITY_CLIENT_ID=$(az identity show \
 	--resource-group "$RESOURCE_GROUP" \
 	--name "$MANAGED_IDENTITY_NAME" \
-	--query clientId --output tsv)
+	--query clientId --output tsv | xargs)
 
 IDENTITY_RESOURCE_ID=$(az identity show \
 	--resource-group "$RESOURCE_GROUP" \
 	--name "$MANAGED_IDENTITY_NAME" \
-	--query id --output tsv)
+	--query id --output tsv | xargs)
 
-SUBSCRIPTION_ID=$(az account show --query id --output tsv)
+# サブスクリプション ID を取得
+SUBSCRIPTION_ID=$(az account show --query id --output tsv | xargs)
 
+# ストレージアカウントが存在することを確認
+echo "Verifying storage account: $STORAGE_ACCOUNT_NAME"
+az storage account show \
+	--name "$STORAGE_ACCOUNT_NAME" \
+	--resource-group "$RESOURCE_GROUP" \
+	--query id --output tsv || { echo "ERROR: Storage account not found!"; exit 1; }
+
+# ストレージアカウント リソース ID を取得
+STORAGE_ACCOUNT_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Storage/storageAccounts/$STORAGE_ACCOUNT_NAME"
+
+echo "SUBSCRIPTION_ID: $SUBSCRIPTION_ID"
+echo "STORAGE_ACCOUNT_ID: $STORAGE_ACCOUNT_ID"
+
+# Service Bus 名前空間が存在することを確認
+echo "Verifying Service Bus namespace: $SERVICE_BUS_NAMESPACE"
+sleep 5  # リソース作成完了を待つ
+
+SERVICE_BUS_ID=$(az servicebus namespace show \
+	--name "$SERVICE_BUS_NAMESPACE" \
+	--resource-group "$RESOURCE_GROUP" \
+	--query id --output tsv 2>/dev/null | xargs)
+
+if [ -z "$SERVICE_BUS_ID" ]; then
+	echo "ERROR: Service Bus namespace not found or ID is empty!"
+	echo "Attempting to list existing namespaces..."
+	az servicebus namespace list --resource-group "$RESOURCE_GROUP"
+	exit 1
+fi
+
+echo "SERVICE_BUS_ID: $SERVICE_BUS_ID"
+
+# RBAC ロール割り当て（ストレージ）
+echo "Assigning Storage Blob Data Contributor role..."
 az role assignment create \
 	--assignee "$IDENTITY_CLIENT_ID" \
 	--role "Storage Blob Data Contributor" \
-	--scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Storage/storageAccounts/$STORAGE_ACCOUNT_NAME"
+	--scope "$STORAGE_ACCOUNT_ID"
 
-az role assignment create \
-	--assignee "$IDENTITY_CLIENT_ID" \
-	--role "Azure Service Bus Data Owner" \
-	--scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.ServiceBus/namespaces/$SERVICE_BUS_NAMESPACE"
+# RBAC ロール割り当て（Service Bus）
+echo "Assigning Azure Service Bus Data Owner role..."
+if [ -z "$SERVICE_BUS_ID" ]; then
+	echo "WARNING: SERVICE_BUS_ID is empty, skipping Service Bus role assignment"
+else
+	az role assignment create \
+		--assignee "$IDENTITY_CLIENT_ID" \
+		--role "Azure Service Bus Data Owner" \
+		--scope "$SERVICE_BUS_ID"
+fi
 ```
 
 ### Dapr コンポーネントの登録
