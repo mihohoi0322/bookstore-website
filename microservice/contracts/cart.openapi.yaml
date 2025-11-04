@@ -1,0 +1,202 @@
+openapi: 3.1.0
+info:
+  title: Cart Service API
+  version: 0.1.0
+  summary: Shopping cart management
+  description: ユーザーごとのショッピングカート状態を管理するサービス。
+servers:
+  - url: https://api.bookstore.local/cart
+paths:
+  /carts/{userId}:
+    get:
+      summary: カートの取得
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: カート情報
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Cart'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: カート全体の更新
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartUpdateRequest'
+      responses:
+        '200':
+          description: 更新されたカート
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Cart'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    delete:
+      summary: カートを空にする
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '204':
+          description: 削除成功
+  /carts/{userId}/items:
+    post:
+      summary: 商品をカートに追加
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartItemRequest'
+      responses:
+        '201':
+          description: 追加成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Cart'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /carts/{userId}/items/{bookId}:
+    patch:
+      summary: 商品数量を更新
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: 更新後のカート
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Cart'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: 指定した商品をカートから削除
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 削除成功
+components:
+  parameters:
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    Cart:
+      type: object
+      required:
+        - userId
+        - items
+      properties:
+        userId:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        totalAmount:
+          type: number
+          minimum: 0
+    CartItem:
+      type: object
+      required:
+        - bookId
+        - quantity
+      properties:
+        bookId:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+    CartItemRequest:
+      type: object
+      required:
+        - bookId
+        - quantity
+      properties:
+        bookId:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+    CartUpdateRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItemRequest'
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+  responses:
+    BadRequest:
+      description: 不正なリクエスト
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: データ未検出
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

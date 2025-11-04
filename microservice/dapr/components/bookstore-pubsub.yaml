@@ -1,0 +1,9 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: bookstore-pubsub
+spec:
+  type: pubsub.in-memory
+  version: v1
+scopes:
+  - order-service

@@ -1,0 +1,9 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: cartstore
+spec:
+  type: state.in-memory
+  version: v1
+scopes:
+  - cart-service

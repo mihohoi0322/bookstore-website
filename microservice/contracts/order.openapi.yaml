@@ -1,0 +1,234 @@
+openapi: 3.1.0
+info:
+  title: Order Service API
+  version: 0.1.0
+  summary: Checkout and order lifecycle
+  description: 注文作成、取得、ステータス管理を行うサービス。
+servers:
+  - url: https://api.bookstore.local/order
+paths:
+  /orders:
+    post:
+      summary: 注文を作成
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201':
+          description: 作成された注文
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /orders/{orderId}:
+    get:
+      summary: 注文を取得
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: 注文詳細
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /orders/{orderId}/status:
+    patch:
+      summary: 注文ステータスを更新
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  $ref: '#/components/schemas/OrderStatus'
+      responses:
+        '200':
+          description: 更新後の注文
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  parameters:
+    OrderId:
+      name: orderId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    OrderStatus:
+      type: string
+      enum:
+        - pending
+        - processing
+        - completed
+        - cancelled
+    Order:
+      type: object
+      required:
+        - id
+        - userId
+        - items
+        - totalAmount
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        totalAmount:
+          type: number
+          minimum: 0
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        createdAt:
+          type: string
+          format: date-time
+        payment:
+          $ref: '#/components/schemas/PaymentSummary'
+        shippingAddress:
+          $ref: '#/components/schemas/ShippingAddress'
+    OrderItem:
+      type: object
+      required:
+        - bookId
+        - quantity
+        - unitPrice
+      properties:
+        bookId:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+        unitPrice:
+          type: number
+          minimum: 0
+    PaymentSummary:
+      type: object
+      required:
+        - method
+        - status
+      properties:
+        method:
+          type: string
+          enum:
+            - credit_card
+            - apple_pay
+            - google_pay
+        status:
+          type: string
+          enum:
+            - authorized
+            - captured
+            - failed
+        cardLast4:
+          type: string
+          pattern: "^[0-9]{4}$"
+          nullable: true
+    ShippingAddress:
+      type: object
+      required:
+        - postalCode
+        - prefecture
+        - city
+        - line1
+      properties:
+        postalCode:
+          type: string
+        prefecture:
+          type: string
+        city:
+          type: string
+        line1:
+          type: string
+        line2:
+          type: string
+          nullable: true
+    CreateOrderRequest:
+      type: object
+      required:
+        - userId
+        - items
+        - paymentToken
+        - shippingAddress
+      properties:
+        userId:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateOrderItem'
+        paymentToken:
+          type: string
+        shippingAddress:
+          $ref: '#/components/schemas/ShippingAddress'
+        memo:
+          type: string
+          nullable: true
+    CreateOrderItem:
+      type: object
+      required:
+        - bookId
+        - quantity
+      properties:
+        bookId:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+  responses:
+    BadRequest:
+      description: 不正なリクエスト
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: データ未検出
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
