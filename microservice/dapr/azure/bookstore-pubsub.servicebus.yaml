@@ -2,11 +2,11 @@ componentType: pubsub.azure.servicebus.topics
 version: v1
 metadata:
   - name: namespaceName
-    value: "<SERVICE_BUS_NAMESPACE>.servicebus.windows.net"
+    value: "bookstore-bus-1762243984.servicebus.windows.net"
   - name: azureTenantId
-    value: "<AZURE_TENANT_ID>"
+    value: "16b3c013-d300-468d-ac64-7eda0820b6d3"
   - name: azureClientId
-    value: "<MANAGED_IDENTITY_CLIENT_ID>"
+    value: "cd5029f2-fbf1-4693-b484-c0556acca33e"
 scopes:
   - order-service
   - catalog-service
