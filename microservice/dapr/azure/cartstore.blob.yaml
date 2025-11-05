@@ -2,10 +2,10 @@ componentType: state.azure.blobstorage
 version: v2
 metadata:
   - name: accountName
-    value: "bookstorestate"
+    value: "<STORAGE_ACCOUNT_NAME>"
   - name: containerName
     value: "cartstore"
   - name: azureClientId
-    value: "cd5029f2-fbf1-4693-b484-c0556acca33e"
+    value: "<MANAGED_IDENTITY_CLIENT_ID>"
 scopes:
   - cart-service

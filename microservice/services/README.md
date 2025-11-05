@@ -24,6 +24,36 @@ post_date: 2025-11-04
 | order-service | 4103 | `order-service` | 注文作成・ステータス管理 |
 | admin-service | 4104 | `admin-service` | 管理用の書籍 CRUD |
 
+### アーキテクチャ図
+
+```mermaid
+flowchart LR
+	FE["bookstore-frontend<br/>(静的ホスティング)"] -->|HTTPS| BFF["bookstore-bff<br/>(Fastify)"]
+
+	subgraph ACA["Azure Container Apps"]
+		BFF -->|Dapr 連携| CATALOG["catalog-service"]
+		BFF -->|REST| CART["cart-service"]
+		BFF -->|REST| ORDER["order-service"]
+		BFF -->|REST| ADMIN["admin-service"]
+
+		CATALOG -.->|サイドカー| CATALOG_DAPR["Dapr Sidecar<br/>(catalog)"]
+		CART -.->|サイドカー| CART_DAPR["Dapr Sidecar<br/>(cart)"]
+		ORDER -.->|サイドカー| ORDER_DAPR["Dapr Sidecar<br/>(order)"]
+		ADMIN -.->|サイドカー| ADMIN_DAPR["Dapr Sidecar<br/>(admin)"]
+	end
+
+	subgraph DAPR["Dapr コンポーネント"]
+		STATE["Azure Blob Storage<br/>catalogstore/cartstore/orderstore"]
+		PUBSUB["Azure Service Bus<br/>orders トピック"]
+	end
+
+	CATALOG_DAPR -->|状態管理| STATE
+	CART_DAPR -->|状態管理| STATE
+	ORDER_DAPR -->|状態管理| STATE
+	ADMIN_DAPR -->|状態管理| STATE
+	ORDER_DAPR -->|Pub/Sub| PUBSUB
+```
+
 ## 起動手順
 
 1. 各ディレクトリで依存関係をインストールします。
@@ -32,7 +62,7 @@ post_date: 2025-11-04
 
 3. BFF (`microservice/bff`) からは `http://localhost:410x` または Dapr 経由 (`http://localhost:3500/v1.0/invoke/...`) で呼び出せます。
 
-例: カタログとカートを同時に起動する
+例: カタログとカートを同時に起動する（ローカルで実施する場合）
 
 ```bash
 (cd catalog && npm install && dapr run --app-id catalog-service --app-port 4101 --components-path ../../dapr/components -- npm run dev)
@@ -40,8 +70,6 @@ post_date: 2025-11-04
 ```
 
 ## Azure Container Apps デプロイ手順
-
-Microsoft Learn の[クイックスタート](https://learn.microsoft.com/azure/container-apps/microservices-dapr?tabs=bash) と同等の粒度で、書籍ストアのマイクロサービスを Azure Container Apps (ACA) + Dapr 上に展開するためのコマンド群です。詳細な解説やトラブルシューティングは `docs/ops/azure-container-apps.md` を参照してください。
 
 ### 前提条件
 
@@ -67,64 +95,9 @@ export LOCATION="japaneast"
 export CONTAINERAPPS_ENVIRONMENT="cae-bookstore"
 export LOG_ANALYTICS_WORKSPACE="law-bookstore"
 export STORAGE_ACCOUNT_NAME="bookstorestate$(date +%s)"  # ストレージアカウント名はグローバルにユニークである必要があります
-export SERVICE_BUS_NAMESPACE="bookstore-bus-$(date +%s)"  # -sb サフィックスは予約済みのため使用不可
+export SERVICE_BUS_NAMESPACE="bookstore-bus-$(date +%s)"
 export MANAGED_IDENTITY_NAME="bookstore-managed-id"
 ```
-
-### コンテナイメージのビルドとプッシュ
-
-1. レジストリにログインします。
-	- **Azure Container Registry** の場合
-
-		```bash
-		az acr login --name <ACR_NAME>
-		```
-
-	- **GitHub Container Registry (ghcr.io)** の場合
-
-		```bash
-		echo "<YOUR_GHCR_PAT>" | docker login ghcr.io -u "<GitHubユーザー名>" --password-stdin
-		```
-
-2. 各イメージをビルドしてプッシュします。（`latest` タグのイメージが既に GHCR に存在する場合はこのステップをスキップ可能です）Dockerfile はレポジトリ直下をビルドコンテキストとして想定しているため、以下のコマンドは必ずリポジトリルート（`bookstore-website/`）で実行してください。
-
-	```bash
-	docker build -f microservice/services/catalog/Dockerfile -t ghcr.io/mihohoi0322/bookstore-website/bookstore-catalog:latest .
-	docker push ghcr.io/mihohoi0322/bookstore-website/bookstore-catalog:latest
-
-	docker build -f microservice/services/cart/Dockerfile -t ghcr.io/mihohoi0322/bookstore-website/bookstore-cart:latest .
-	docker push ghcr.io/mihohoi0322/bookstore-website/bookstore-cart:latest
-
-	docker build -f microservice/services/order/Dockerfile -t ghcr.io/mihohoi0322/bookstore-website/bookstore-order:latest .
-	docker push ghcr.io/mihohoi0322/bookstore-website/bookstore-order:latest
-
-	docker build -f microservice/services/admin/Dockerfile -t ghcr.io/mihohoi0322/bookstore-website/bookstore-admin:latest .
-	docker push ghcr.io/mihohoi0322/bookstore-website/bookstore-admin:latest
-
-	docker build -f microservice/bff/Dockerfile -t ghcr.io/mihohoi0322/bookstore-website/bookstore-bff:latest .
-	docker push ghcr.io/mihohoi0322/bookstore-website/bookstore-bff:latest
-
-	docker build -f microservice/Dockerfile -t ghcr.io/mihohoi0322/bookstore-website/bookstore-frontend:latest .
-	docker push ghcr.io/mihohoi0322/bookstore-website/bookstore-frontend:latest
-	```
-
-3. GitHub Container Registry にプッシュしたパッケージを公開 (`public`) に切り替える場合は、GitHub CLI を使って次のコマンドを実行します。組織にパッケージを置いている場合はエンドポイントを `/orgs/<ORG>/packages/...` に変更してください。
-
-	```bash
-	# write:packages 権限を持つ PAT で gh CLI にログイン
-	echo "<YOUR_GHCR_PAT>" | gh auth login --with-token
-
-	# 公開ステータスへ変更
-	for pkg in bookstore-catalog bookstore-cart bookstore-order bookstore-admin bookstore-bff bookstore-frontend; do
-	  gh api \
-	    --method PATCH \
-	    -H "Accept: application/vnd.github+json" \
-	    "/user/packages/container/${pkg}/visibility" \
-	    -f visibility=public
-	done
-	```
-
-4. 公開設定が反映されたかを確認するには、認証を外した状態で `docker pull` を試し、成功するかチェックしてください。
 
 ### Azure リソースの作成
 
@@ -137,18 +110,19 @@ az monitor log-analytics workspace create \
 	--resource-group "$RESOURCE_GROUP" \
 	--workspace-name "$LOG_ANALYTICS_WORKSPACE"
 
-# ホワイトスペースをトリムして変数に格納
+# LogAnalytics ID
 LOG_ANALYTICS_ID=$(az monitor log-analytics workspace show \
 	--resource-group "$RESOURCE_GROUP" \
 	--workspace-name "$LOG_ANALYTICS_WORKSPACE" \
 	--query id --output tsv | xargs)
 
+# LogAnalytics KEY
 LOG_ANALYTICS_KEY=$(az monitor log-analytics workspace get-shared-keys \
 	--resource-group "$RESOURCE_GROUP" \
 	--workspace-name "$LOG_ANALYTICS_WORKSPACE" \
 	--query primarySharedKey --output tsv | xargs)
 
-# 変数の値を確認（デバッグ用）
+# 変数の値を確認
 echo "LOG_ANALYTICS_ID: $LOG_ANALYTICS_ID"
 echo "LOG_ANALYTICS_KEY length: ${#LOG_ANALYTICS_KEY}"
 
@@ -227,7 +201,7 @@ IDENTITY_RESOURCE_ID=$(az identity show \
 # サブスクリプション ID を取得
 SUBSCRIPTION_ID=$(az account show --query id --output tsv | xargs)
 
-# ストレージアカウントが存在することを確認
+# ストレージアカウントが存在することを念のため確認
 echo "Verifying storage account: $STORAGE_ACCOUNT_NAME"
 az storage account show \
 	--name "$STORAGE_ACCOUNT_NAME" \
@@ -280,6 +254,7 @@ fi
 ### Dapr コンポーネントの登録
 
 `microservice/dapr/azure/*.yaml` にあるプレースホルダーを実環境の値へ置き換える必要があります。
+sed を使って置き換えていきますが、手動でも問題ありません。
 
 ```bash
 # プレースホルダーを置き換え
@@ -323,10 +298,12 @@ az containerapp env dapr-component set \
 	--dapr-component-name bookstore-pubsub \
 	--yaml "$PUBSUB_FILE"
 ```
+これで Dapr の設定が完了しました。
 
 ### コンテナーアプリの作成
 
 各サービスを内部向けに、BFF を外部向けに展開します。Dapr を利用しないフロントエンドは必要に応じて別のホスティング（Azure Static Web Apps など）へ配置するか、Container Apps 上で公開してください。
+イメージは、`ghcr.io/mihohoi0322/bookstore-website` に格納しています。
 
 > **Note:** 各コマンドの `--user-assigned "$IDENTITY_RESOURCE_ID"` でユーザー割り当てマネージド ID を紐づけます。
 
@@ -459,13 +436,3 @@ az monitor log-analytics query \
 ```bash
 az group delete --name "$RESOURCE_GROUP"
 ```
-
-## テスト
-
-各サービスは Vitest ベースの単体テストを備えています。
-
-```bash
-npm test
-```
-
-Dapr をモックするために `USE_IN_MEMORY_DAPR=true` が自動的に設定されるため、ローカルで Dapr を起動していなくてもテストを実行できます。
