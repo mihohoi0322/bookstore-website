@@ -438,7 +438,7 @@ az monitor log-analytics query \
 ### デプロイ結果の確認
 上記の手順でデプロイが完了すると、Azure Container Apps 環境で以下のようなサービス群が稼働します：
 
-![Azure Container Apps デプロイ結果](../../docs/assets/azure-container-apps-deployment.png)
+![Azure Container Apps デプロイ結果](../../docs/assets/container-apps-deployment.png)
 
 *Azure Portal でのContainer Apps Environment内のアプリケーション一覧。全てのマイクロサービス（admin-service、bookstore-bff、bookstore-frontend、cart-service、catalog-service、order-service）が正常に動作していることが確認できます。*
 

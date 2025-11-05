@@ -111,11 +111,11 @@ flowchart LR
 
 ### フロントエンド画面
 
-![書籍ストア フロントエンド](./docs/assets/bookstore-frontend-app.png)
+![書籍ストア フロントエンド](microservice/docs/assets/bookstore-frontend-app.png)
 
 ### Azure Container Appsデプロイ結果
 
-![Azure Container Apps](./docs/assets/azure-container-apps-deployment.png)
+![Azure Container Apps](microservice/docs/assets/container-apps-deployment.png)
 
 ## ライセンス
 
