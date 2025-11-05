@@ -94,7 +94,7 @@ export RESOURCE_GROUP="rg-bookstore"
 export LOCATION="japaneast"
 export CONTAINERAPPS_ENVIRONMENT="cae-bookstore"
 export LOG_ANALYTICS_WORKSPACE="law-bookstore"
-export STORAGE_ACCOUNT_NAME="bookstorestate$(date +%s)"  # ストレージアカウント名はグローバルにユニークである必要があります
+export STORAGE_ACCOUNT_NAME="bookstorestate$(date +%s)"
 export SERVICE_BUS_NAMESPACE="bookstore-bus-$(date +%s)"
 export MANAGED_IDENTITY_NAME="bookstore-managed-id"
 ```
@@ -108,7 +108,8 @@ az group create \
 
 az monitor log-analytics workspace create \
 	--resource-group "$RESOURCE_GROUP" \
-	--workspace-name "$LOG_ANALYTICS_WORKSPACE"
+	--workspace-name "$LOG_ANALYTICS_WORKSPACE" \
+	--location "$LOCATION"
 
 # LogAnalytics ID
 LOG_ANALYTICS_ID=$(az monitor log-analytics workspace show \
@@ -258,7 +259,7 @@ sed を使って置き換えていきますが、手動でも問題ありませ�
 
 ```bash
 # プレースホルダーを置き換え
-cd "$(git rev-parse --show-toplevel)" 2>/dev/null || cd /workspaces/bookstore-website
+cd ./workspaces/bookstore-website
 
 # Blob Storage コンポーネント用のプレースホルダーを置き換え
 sed -i "s|<STORAGE_ACCOUNT_NAME>|$STORAGE_ACCOUNT_NAME|g" microservice/dapr/azure/catalogstore.blob.yaml
@@ -273,9 +274,10 @@ sed -i "s|<SERVICE_BUS_NAMESPACE>|$SERVICE_BUS_FQDN|g" microservice/dapr/azure/b
 sed -i "s|<AZURE_TENANT_ID>|$TENANT_ID|g" microservice/dapr/azure/bookstore-pubsub.servicebus.yaml
 sed -i "s|<MANAGED_IDENTITY_CLIENT_ID>|$IDENTITY_CLIENT_ID|g" microservice/dapr/azure/bookstore-pubsub.servicebus.yaml
 
-# 置き換え結果を確認
-echo "Updated Dapr component files:"
-grep -E "(storageAccount|namespaceName|azureTenantId|azureClientId)" microservice/dapr/azure/*.yaml | head -10
+# Blob Storage コンポーネント用のMANAGED_IDENTITY_CLIENT_IDプレースホルダーを置き換え
+sed -i "s|<MANAGED_IDENTITY_CLIENT_ID>|$IDENTITY_CLIENT_ID|g" microservice/dapr/azure/catalogstore.blob.yaml
+sed -i "s|<MANAGED_IDENTITY_CLIENT_ID>|$IDENTITY_CLIENT_ID|g" microservice/dapr/azure/cartstore.blob.yaml
+sed -i "s|<MANAGED_IDENTITY_CLIENT_ID>|$IDENTITY_CLIENT_ID|g" microservice/dapr/azure/orderstore.blob.yaml
 
 # Dapr コンポーネント設定ファイルの絶対パスを指定
 for component in catalogstore cartstore orderstore; do
@@ -385,7 +387,7 @@ az containerapp create \
 	--user-assigned "$IDENTITY_RESOURCE_ID"
 ```
 
-フロントエンドを Container Apps で配信する場合は、以下のように Nginx イメージを外部公開します。
+フロントエンドを Container Apps で配信する場合（実施します）は、以下のように Nginx イメージを外部公開します。
 
 ```bash
 az containerapp create \
@@ -398,7 +400,6 @@ az containerapp create \
 	--min-replicas 1 --max-replicas 3
 ```
 
-> **Note:** 既に作成済みのコンテナーアプリにユーザー割り当て ID を後付けする場合は、`az containerapp identity assign --name <APP_NAME> --resource-group "$RESOURCE_GROUP" --user-assigned "$IDENTITY_RESOURCE_ID"` を実行し、`az containerapp revision restart --name <APP_NAME> --resource-group "$RESOURCE_GROUP"` で再起動してください。
 
 ### 動作確認と運用
 
@@ -431,8 +432,29 @@ az monitor log-analytics query \
 	--output table
 ```
 
+
+## デプロイ結果の確認
+
+### デプロイ結果の確認
+上記の手順でデプロイが完了すると、Azure Container Apps 環境で以下のようなサービス群が稼働します：
+
+![Azure Container Apps デプロイ結果](../../docs/assets/azure-container-apps-deployment.png)
+
+*Azure Portal でのContainer Apps Environment内のアプリケーション一覧。全てのマイクロサービス（admin-service、bookstore-bff、bookstore-frontend、cart-service、catalog-service、order-service）が正常に動作していることが確認できます。*
+
+### アプリケーションの動作確認
+
+デプロイされたフロントエンドアプリケーションにアクセスすると、以下のような書籍ストアの画面が表示されます：
+
+![書籍ストア フロントエンド画面](../../docs/assets/bookstore-frontend-app.png)
+
+*「ほんのわ書店」のメイン画面。書籍一覧、絞り込み機能、カート機能などが正常に動作し、マイクロサービスアーキテクチャによる書籍ストアアプリケーションが完全に稼働していることが確認できます。*
+
+
+## クリーンアップ
 リソースを削除する場合は、次のコマンドでリソースグループごとクリーンアップできます。
 
 ```bash
 az group delete --name "$RESOURCE_GROUP"
 ```
+
