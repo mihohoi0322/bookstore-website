@@ -2,10 +2,10 @@
 post_title: "Microservice Services ガイド"
 author1: "miho"
 tags:
-	- services
-	- microservices
-	- azure
-	- container-apps
+  - services
+  - microservices
+  - azure
+  - container-apps
 ai_note: true
 summary: "書籍ストアのマイクロサービス群の概要、ローカル実行、およびAzure Container Appsへのデプロイ手順をまとめる。"
 post_date: 2025-11-04
@@ -438,7 +438,7 @@ az monitor log-analytics query \
 ### デプロイ結果の確認
 上記の手順でデプロイが完了すると、Azure Container Apps 環境で以下のようなサービス群が稼働します：
 
-![Azure Container Apps デプロイ結果](../../docs/assets/container-apps-deployment.png)
+![Azure Container Apps デプロイ結果](../docs/assets/container-apps-deployment.png)
 
 *Azure Portal でのContainer Apps Environment内のアプリケーション一覧。全てのマイクロサービス（admin-service、bookstore-bff、bookstore-frontend、cart-service、catalog-service、order-service）が正常に動作していることが確認できます。*
 
@@ -446,7 +446,7 @@ az monitor log-analytics query \
 
 デプロイされたフロントエンドアプリケーションにアクセスすると、以下のような書籍ストアの画面が表示されます：
 
-![書籍ストア フロントエンド画面](../../docs/assets/bookstore-frontend-app.png)
+![書籍ストア フロントエンド画面](../docs/assets/bookstore-frontend-app.png)
 
 *「ほんのわ書店」のメイン画面。書籍一覧、絞り込み機能、カート機能などが正常に動作し、マイクロサービスアーキテクチャによる書籍ストアアプリケーションが完全に稼働していることが確認できます。*
 
